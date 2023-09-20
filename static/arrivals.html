@@ -1,0 +1,352 @@
+<!-- This file contains a html webpage that can consume an API by performing CRUD operations -->
+<!-- Author: Sarah McNelis - G00398343 -->
+<html>
+
+	<head>
+	
+		<title>Arrivals at Shannon Airport</title>
+
+		<!-- Ajax -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+
+		<!-- CSS -->
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+
+		<!-- JavaScript Bundle with Popper -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+	</head>
+	
+	<body>
+	
+		<!-- Pic -->
+		<div align="center">
+			<img src="snnairport.jpeg" alt="Shannon Airport Logo" width="450" height="250">
+		</div>
+
+		<!-- Homepage button -->
+		<center>
+			<div class="row justify-content-center">						
+				<button type="button" class="btn btn-secondary  btn-lg">
+					<a href="/homepage.html" class="link-warning">Homepage</a>
+				</button>					
+			</div>		
+		</center><br>
+		
+		<!-- CARD -->
+		<div class="card">
+		
+			<!-- Card header for title-->
+			<div class="card-header">
+				<h3 align="center">Arrivals at Shannon Airport</h3>
+			</div>
+
+			<!-- Card body for arrivals table-->
+			<div class="card-body">
+				<div>
+					<table id="myTable" border="2" class="table table-hover">					
+							<tr>
+								<th scope="col">ID</th>
+								<th scope="col">Airline</th>
+								<th scope="col">Origin</th>
+								<th scope="col">Destination</th>
+								<th scope="col">Flight Number</th>
+								<th scope="col">Scheduled Arrival</th>
+								<th scope="col">Actual Arrival</th>
+								<th scope="col">Update</th>
+								<th scope="col">Delete</th>
+							</tr>					
+					</table>
+				</div>
+			</div>
+
+			<!-- Card footer for create button-->
+			<div class="card-footer">
+				
+				<div>
+					<button id="showCreateButton" onclick="showCreate()" type="button" class="btn btn-secondary">Create Arrival</button>
+					<br/><br/>					
+				</div>
+				
+				<!-- Hidden forms due to span activated onclick-->
+				<div id="createUpdateForm" style="display:none" >
+				
+					<h2><span id="createLabel">Create an</span> <span id="updateLabel">Update an</span> Arrival</h2>
+				
+					<input type="hidden" name="id"/><br>
+					Airline <input type="text" name="airline"><br>
+					Origin <input type="text" name="origin"><br>
+					Destination <input type="text" name="destination"><br>
+					Flight Number <input type="text" name="flightnumber"><br>
+					Scheduled Arrival <input type="text" name="scheduledarrival"><br>
+					Actual Arrival <input type="text" name="actualarrival"><br><br>					
+					
+					<span><button id="doCreateButton" onclick="doCreate()" type="button" class="btn btn-secondary">Create</button></span>
+					<span><button id="doUpdateButton" onclick="doUpdate()"type="button" class="btn btn-secondary">Update</button></span>
+					 
+				</div>				
+			</div>			
+		</div>
+
+		<script>
+			// Below javascript code adaped from Data rep week 9 lectures on bookviewer.html
+		
+			// Main function
+			function init(){
+			getAll()
+			}
+			
+			// Function to show create form
+			function showCreate(){
+				document.getElementById('showCreateButton').style.display="none"
+				document.getElementById('myTable').style.display="none"
+				document.getElementById('createUpdateForm').style.display="block"
+
+				document.getElementById('createLabel').style.display="inline"
+				document.getElementById('updateLabel').style.display="none"
+
+				document.getElementById('doCreateButton').style.display="block"
+				document.getElementById('doUpdateButton').style.display="none"
+
+			}
+			
+			// Function to view all 
+			function showViewAll(){
+				document.getElementById('showCreateButton').style.display="block"
+				document.getElementById('myTable').style.display="block"
+				document.getElementById('createUpdateForm').style.display="none"
+			}
+			
+			// Function to show update form
+			function showUpdate(buttonElement){
+				document.getElementById('showCreateButton').style.display="none"
+				document.getElementById('myTable').style.display="none"
+				document.getElementById('createUpdateForm').style.display="block"
+				
+				document.getElementById('createLabel').style.display="none"
+				document.getElementById('updateLabel').style.display="inline"
+				
+				document.getElementById('doCreateButton').style.display="none"
+				document.getElementById('doUpdateButton').style.display="block"
+
+				var rowElement = buttonElement.parentNode.parentNode 
+				var arrival = getArrivalFromRow(rowElement)
+				populateFormWithArrival(arrival)
+			}
+	
+			// Function to get arrival info from form
+			function doCreate(){
+				var form = document.getElementById('createUpdateForm')
+
+				var arrival = {}
+			   
+				arrival.airline = form.querySelector('input[name="airline"]').value
+				arrival.origin = form.querySelector('input[name="origin"]').value
+				arrival.destination = form.querySelector('input[name="destination"]').value
+				arrival.flightnumber = form.querySelector('input[name="flightnumber"]').value
+				arrival.scheduledarrival = form.querySelector('input[name="scheduledarrival"]').value
+				arrival.actualarrival = form.querySelector('input[name="actualarrival"]').value
+				console.log(JSON.stringify(arrival))
+										
+				addArrivalToTable(arrival)
+				clearForm();
+				showViewAll();
+				createArrival(arrival) 								
+			}
+	
+			// Function to get update info from form
+			function doUpdate(){
+				var arrival = getArrivalFromForm();
+				var rowElement = document.getElementById(arrival.id);
+				updateArrival(arrival);
+				setArrivalInRow(rowElement,arrival);
+			   
+				clearForm();
+				showViewAll();
+			}
+	
+			// Function to delete from table
+			function doDelete(r){
+				var tableElement = document.getElementById('myTable');
+				var rowElement = r.parentNode.parentNode;
+				var index = rowElement.rowIndex;
+
+				deleteArrival(rowElement.getAttribute("id"));
+				tableElement.deleteRow(index);
+			}
+	
+			// Function to add arrival to table
+			function addArrivalToTable(arrival){
+				var tableElement = document.getElementById('myTable')
+				var rowElement = tableElement.insertRow(-1)
+				rowElement.setAttribute('id',arrival.id)
+				var cell1 = rowElement.insertCell(0);
+				cell1.innerHTML = arrival.id
+				var cell2 = rowElement.insertCell(1);
+				cell2.innerHTML = arrival.airline
+				var cell3 = rowElement.insertCell(2);
+				cell3.innerHTML = arrival.origin
+				var cell4 = rowElement.insertCell(3);
+				cell4.innerHTML = arrival.destination
+				var cell5 = rowElement.insertCell(4);
+				cell5.innerHTML = arrival.flightnumber
+				var cell6 = rowElement.insertCell(5);
+				cell6.innerHTML = arrival.scheduledarrival
+				var cell7 = rowElement.insertCell(6);
+				cell7.innerHTML = arrival.actualarrival
+				var cell8 = rowElement.insertCell(7);
+				cell8.innerHTML = '<button onclick="showUpdate(this)" type="button" class="btn btn-secondary">Update</button>'
+				var cell9 = rowElement.insertCell(8);
+				cell9.innerHTML = '<button onclick=doDelete(this) type="button" class="btn btn-secondary">Delete</button>'
+			}
+			
+			// Function to clear the form values 
+			function clearForm(){
+				var form = document.getElementById('createUpdateForm')
+
+				form.querySelector('input[name="airline"]').value=''
+				form.querySelector('input[name="origin"]').value=''
+				form.querySelector('input[name="destination"]').value=''		
+				form.querySelector('input[name="flightnumber"]').value=''
+				form.querySelector('input[name="scheduledarrival"]').value=''		
+				form.querySelector('input[name="actualarrival"]').value=''
+			}
+			
+			// Function to get arrival from row
+			function getArrivalFromRow(rowElement){			
+				var arrival ={}
+				arrival.id  = rowElement.getAttribute('id')
+				arrival.airline = rowElement.cells[1].firstChild.textContent
+				arrival.origin = rowElement.cells[2].firstChild.textContent
+				arrival.destination = rowElement.cells[3].firstChild.textContent
+				arrival.flightnumber = rowElement.cells[4].firstChild.textContent
+				arrival.scheduledarrival = rowElement.cells[5].firstChild.textContent
+				arrival.actualarrival = rowElement.cells[6].firstChild.textContent
+				return arrival
+			}
+			
+			// Function to set the arrival in a row
+			function setArrivalInRow(rowElement, arrival){
+				rowElement.cells[0].firstChild.textContent= arrival.id  
+				rowElement.cells[1].firstChild.textContent= arrival.airline
+				rowElement.cells[2].firstChild.textContent= arrival.origin
+				rowElement.cells[3].firstChild.textContent= arrival.destination
+				rowElement.cells[4].firstChild.textContent= arrival.flightnumber
+				rowElement.cells[5].firstChild.textContent= arrival.scheduledarrival
+				rowElement.cells[6].firstChild.textContent= arrival.actualarrival
+			}
+			
+			// Function to populate form with arrival 
+			function populateFormWithArrival(arrival){
+				var form = document.getElementById('createUpdateForm')
+				form.querySelector('input[name="id"]').disabled = true
+
+				form.querySelector('input[name="id"]').value  = arrival.id
+				form.querySelector('input[name="airline"]').value= arrival.airline
+				form.querySelector('input[name="origin"]').value= arrival.origin
+				form.querySelector('input[name="destination"]').value= arrival.destination
+				form.querySelector('input[name="flightnumber"]').value= arrival.flightnumber
+				form.querySelector('input[name="scheduledarrival"]').value= arrival.scheduledarrival
+				form.querySelector('input[name="actualarrival"]').value= arrival.actualarrival
+				return arrival
+			}
+		
+			// Function to get arrival from form
+			function getArrivalFromForm(){
+				var form = document.getElementById('createUpdateForm')
+				var arrival = {}
+				
+				arrival.id = form.querySelector('input[name="id"]').value
+				arrival.airline = form.querySelector('input[name="airline"]').value
+				arrival.origin = form.querySelector('input[name="origin"]').value
+				arrival.destination = form.querySelector('input[name="destination"]').value
+				arrival.flightnumber = form.querySelector('input[name="flightnumber"]').value
+				arrival.scheduledarrival = form.querySelector('input[name="scheduledarrival"]').value
+				arrival.actualarrival = form.querySelector('input[name="actualarrival"]').value
+				console.log(JSON.stringify(arrival))
+				return arrival
+			}
+
+			// AJAX FUNCTIONS BELOW			
+			
+			// GET ALL ARRIVALS	
+			function getAll(){
+				$.ajax({
+					"url":"/arrivals",
+					headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+					"method":"GET",
+					"data":"",
+					"dataType":"JSON",
+					"success":function(result){
+						for (arrival of result){
+							addArrivalToTable(arrival);
+						}	
+						//console.log(result)					
+					},
+					"error":function(xhr,status,error){
+						console.log("status:"+status+" message:"+error);
+					}
+				});
+			}
+			
+			// CREATE ARRIVAL
+			function createArrival(){
+				console.log(JSON.stringify(arrival));
+				$.ajax({
+					"url": "/arrivals",
+					"method":"POST",
+					"data":JSON.stringify(arrival),
+					"dataType": "JSON",
+					contentType: "application/json; charset=utf-8",
+					"success":function(result){
+						arrival.id = result.id
+						//console.log(result);
+					},
+					"error":function(xhr,status,error){
+						console.log("error: "+status+" msg:"+error);
+					}
+				});
+			}
+
+			// UDPATE ARRIVAL
+			function updateArrival(arrival){				
+				console.log(JSON.stringify(arrival));
+				$.ajax({
+					"url": "arrivals/"+encodeURI(arrival.id),
+					"method":"PUT",
+					"data":JSON.stringify(arrival),
+					"dataType": "JSON",
+					contentType: "application/json; charset=utf-8",
+					"success":function(result){
+					   // console.log(result);					  
+					},
+					"error":function(xhr,status,error){
+						console.log("error: "+status+" msg:"+error);
+					}
+				});
+			}
+	
+			// DELETE ARRIVAL
+			function deleteArrival(id){				
+				//console.log(JSON.stringify('deleting '+id));
+				$.ajax({
+					"url": "/arrivals/"+encodeURI(id),
+					"method":"DELETE",
+					"data":"",
+					"dataType": "JSON",
+					contentType: "application/json; charset=utf-8",
+					"success":function(result){
+						//console.log(result);				  
+					},
+					"error":function(xhr,status,error){
+						console.log("error: "+status+" msg:"+error);
+					}
+				});
+			}
+						
+			// Activating main function here
+			init()
+									
+		</script>			
+    </body>		
+</html>

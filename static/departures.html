@@ -1,0 +1,352 @@
+<!-- This file contains a html webpage that can consume an API by performing CRUD operations -->
+<!-- Author: Sarah McNelis - G00398343 -->
+<html>
+
+	<head>
+	
+		<title>Departures at Shannon Airport</title>
+
+		<!-- Ajax -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+
+		<!-- CSS -->
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+
+		<!-- JavaScript Bundle with Popper -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+	</head>
+	
+	<body>
+	
+		<!-- Pic -->
+		<div align="center">
+			<img src="snnairport.jpeg" alt="Shannon Airport Logo" width="450" height="250">
+		</div>
+
+		<!-- Homepage button -->
+		<center>
+			<div class="row justify-content-center">						
+				<button type="button" class="btn btn-secondary  btn-lg">
+					<a href="/homepage.html" class="link-warning">Homepage</a>
+				</button>					
+			</div>		
+		</center><br>
+		
+		<!-- CARD -->
+		<div class="card">
+		
+			<!-- Card header for title-->
+			<div class="card-header">
+				<h3 align="center">Departures at Shannon Airport</h3>
+			</div>
+
+			<!-- Card body for arrivals table-->
+			<div class="card-body">
+				<div>
+					<table id="myTable" border="2" class="table table-hover">					
+							<tr>
+								<th scope="col">ID</th>
+								<th scope="col">Airline</th>
+								<th scope="col">Origin</th>
+								<th scope="col">Destination</th>
+								<th scope="col">Flight Number</th>
+								<th scope="col">Scheduled Departure</th>
+								<th scope="col">Actual Departure</th>
+								<th scope="col">Update</th>
+								<th scope="col">Delete</th>
+							</tr>					
+					</table>
+				</div>
+			</div>
+
+			<!-- Card footer for create button-->
+			<div class="card-footer">
+				
+				<div>
+					<button id="showCreateButton" onclick="showCreate()" type="button" class="btn btn-secondary">Create Departure</button>
+					<br/><br/>					
+				</div>
+				
+				<!-- Hidden forms due to span activated onclick-->
+				<div id="createUpdateForm" style="display:none" >
+				
+					<h2><span id="createLabel">Create a</span> <span id="updateLabel">Update a</span> Departure</h2>
+				
+					<input type="hidden" name="id"/><br>
+					Airline <input type="text" name="airline"><br>
+					Origin <input type="text" name="origin"><br>
+					Destination <input type="text" name="destination"><br>
+					Flight Number <input type="text" name="flightnumber"><br>
+					Scheduled Departure <input type="text" name="scheduleddeparture"><br>
+					Actual Departure <input type="text" name="actualdeparture"><br><br>					
+					
+					<span><button id="doCreateButton" onclick="doCreate()" type="button" class="btn btn-secondary">Create</button></span>
+					<span><button id="doUpdateButton" onclick="doUpdate()"type="button" class="btn btn-secondary">Update</button></span>
+					 
+				</div>				
+			</div>			
+		</div>
+
+		<script>
+			// Below javascript code adaped from Data rep week 9 lectures on bookviewer.html
+		
+			// Main function
+			function init(){
+			getAll()
+			}
+			
+			// Function to show create form
+			function showCreate(){
+				document.getElementById('showCreateButton').style.display="none"
+				document.getElementById('myTable').style.display="none"
+				document.getElementById('createUpdateForm').style.display="block"
+
+				document.getElementById('createLabel').style.display="inline"
+				document.getElementById('updateLabel').style.display="none"
+
+				document.getElementById('doCreateButton').style.display="block"
+				document.getElementById('doUpdateButton').style.display="none"
+
+			}
+			
+			// Function to view all 
+			function showViewAll(){
+				document.getElementById('showCreateButton').style.display="block"
+				document.getElementById('myTable').style.display="block"
+				document.getElementById('createUpdateForm').style.display="none"
+			}
+			
+			// Function to show update form
+			function showUpdate(buttonElement){
+				document.getElementById('showCreateButton').style.display="none"
+				document.getElementById('myTable').style.display="none"
+				document.getElementById('createUpdateForm').style.display="block"
+				
+				document.getElementById('createLabel').style.display="none"
+				document.getElementById('updateLabel').style.display="inline"
+				
+				document.getElementById('doCreateButton').style.display="none"
+				document.getElementById('doUpdateButton').style.display="block"
+
+				var rowElement = buttonElement.parentNode.parentNode 
+				var departure = getDepartureFromRow(rowElement)
+				populateFormWithDeparture(departure)
+			}
+	
+			// Function to get departure info from form
+			function doCreate(){
+				var form = document.getElementById('createUpdateForm')
+
+				var departure = {}
+			   
+				departure.airline = form.querySelector('input[name="airline"]').value
+				departure.origin = form.querySelector('input[name="origin"]').value
+				departure.destination = form.querySelector('input[name="destination"]').value
+				departure.flightnumber = form.querySelector('input[name="flightnumber"]').value
+				departure.scheduleddeparture = form.querySelector('input[name="scheduleddeparture"]').value
+				departure.actualdeparture = form.querySelector('input[name="actualdeparture"]').value
+				console.log(JSON.stringify(departure))
+										
+				addDepartureToTable(departure)
+				clearForm();
+				showViewAll();
+				createDeparture(departure) 								
+			}
+	
+			// Function to get update info from form
+			function doUpdate(){
+				var departure = getDepartureFromForm();
+				var rowElement = document.getElementById(departure.id);
+				updateDeparture(departure);
+				setDepartureInRow(rowElement,departure);
+			   
+				clearForm();
+				showViewAll();
+			}
+	
+			// Function to delete from table
+			function doDelete(r){
+				var tableElement = document.getElementById('myTable');
+				var rowElement = r.parentNode.parentNode;
+				var index = rowElement.rowIndex;
+
+				deleteDeparture(rowElement.getAttribute("id"));
+				tableElement.deleteRow(index);
+			}
+	
+			// Function to add departure to table
+			function addDepartureToTable(departure){
+				var tableElement = document.getElementById('myTable')
+				var rowElement = tableElement.insertRow(-1)
+				rowElement.setAttribute('id',departure.id)
+				var cell1 = rowElement.insertCell(0);
+				cell1.innerHTML = departure.id
+				var cell2 = rowElement.insertCell(1);
+				cell2.innerHTML = departure.airline
+				var cell3 = rowElement.insertCell(2);
+				cell3.innerHTML = departure.origin
+				var cell4 = rowElement.insertCell(3);
+				cell4.innerHTML = departure.destination
+				var cell5 = rowElement.insertCell(4);
+				cell5.innerHTML = departure.flightnumber
+				var cell6 = rowElement.insertCell(5);
+				cell6.innerHTML = departure.scheduleddeparture
+				var cell7 = rowElement.insertCell(6);
+				cell7.innerHTML = departure.actualdeparture
+				var cell8 = rowElement.insertCell(7);
+				cell8.innerHTML = '<button onclick="showUpdate(this)" type="button" class="btn btn-secondary">Update</button>'
+				var cell9 = rowElement.insertCell(8);
+				cell9.innerHTML = '<button onclick=doDelete(this) type="button" class="btn btn-secondary">Delete</button>'
+			}
+			
+			// Function to clear the form values 
+			function clearForm(){
+				var form = document.getElementById('createUpdateForm')
+
+				form.querySelector('input[name="airline"]').value=''
+				form.querySelector('input[name="origin"]').value=''
+				form.querySelector('input[name="destination"]').value=''		
+				form.querySelector('input[name="flightnumber"]').value=''
+				form.querySelector('input[name="scheduleddeparture"]').value=''		
+				form.querySelector('input[name="actualdeparture"]').value=''
+			}
+			
+			// Function to get departure from row
+			function getDepartureFromRow(rowElement){			
+				var departure ={}
+				departure.id  = rowElement.getAttribute('id')
+				departure.airline = rowElement.cells[1].firstChild.textContent
+				departure.origin = rowElement.cells[2].firstChild.textContent
+				departure.destination = rowElement.cells[3].firstChild.textContent
+				departure.flightnumber = rowElement.cells[4].firstChild.textContent
+				departure.scheduleddeparture = rowElement.cells[5].firstChild.textContent
+				departure.actualdeparture = rowElement.cells[6].firstChild.textContent
+				return departure
+			}
+			
+			// Function to set the departure in a row
+			function setDepartureInRow(rowElement, departure){
+				rowElement.cells[0].firstChild.textContent= departure.id  
+				rowElement.cells[1].firstChild.textContent= departure.airline
+				rowElement.cells[2].firstChild.textContent= departure.origin
+				rowElement.cells[3].firstChild.textContent= departure.destination
+				rowElement.cells[4].firstChild.textContent= departure.flightnumber
+				rowElement.cells[5].firstChild.textContent= departure.scheduleddeparture
+				rowElement.cells[6].firstChild.textContent= departure.actualdeparture
+			}
+			
+			// Function to populate form with departure 
+			function populateFormWithDeparture(departure){
+				var form = document.getElementById('createUpdateForm')
+				form.querySelector('input[name="id"]').disabled = true
+
+				form.querySelector('input[name="id"]').value  = departure.id
+				form.querySelector('input[name="airline"]').value= departure.airline
+				form.querySelector('input[name="origin"]').value= departure.origin
+				form.querySelector('input[name="destination"]').value= departure.destination
+				form.querySelector('input[name="flightnumber"]').value= departure.flightnumber
+				form.querySelector('input[name="scheduleddeparture"]').value= departure.scheduleddeparture
+				form.querySelector('input[name="actualdeparture"]').value= departure.actualdeparture
+				return departure
+			}
+		
+			// Function to get departure from form
+			function getDepartureFromForm(){
+				var form = document.getElementById('createUpdateForm')
+				var departure = {}
+				
+				departure.id = form.querySelector('input[name="id"]').value
+				departure.airline = form.querySelector('input[name="airline"]').value
+				departure.origin = form.querySelector('input[name="origin"]').value
+				departure.destination = form.querySelector('input[name="destination"]').value
+				departure.flightnumber = form.querySelector('input[name="flightnumber"]').value
+				departure.scheduleddeparture = form.querySelector('input[name="scheduleddeparture"]').value
+				departure.actualdeparture = form.querySelector('input[name="actualdeparture"]').value
+				console.log(JSON.stringify(departure))
+				return departure
+			}
+
+			// AJAX FUNCTIONS BELOW			
+			
+			// GET ALL DEPARTURES
+			function getAll(){
+				$.ajax({
+					"url":"/departures",
+					headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+					"method":"GET",
+					"data":"",
+					"dataType":"JSON",
+					"success":function(result){
+						for (departure of result){
+							addDepartureToTable(departure);
+						}	
+						//console.log(result)					
+					},
+					"error":function(xhr,status,error){
+						console.log("status:"+status+" message:"+error);
+					}
+				});
+			}
+			
+			// CREATE DEPARTURE
+			function createDeparture(){
+				console.log(JSON.stringify(departure));
+				$.ajax({
+					"url": "/departures",
+					"method":"POST",
+					"data":JSON.stringify(departure),
+					"dataType": "JSON",
+					contentType: "application/json; charset=utf-8",
+					"success":function(result){
+						departure.id = result.id
+						//console.log(result);
+					},
+					"error":function(xhr,status,error){
+						console.log("error: "+status+" msg:"+error);
+					}
+				});
+			}
+
+			// UDPATE DEPARTURE
+			function updateDeparture(departure){				
+				console.log(JSON.stringify(departure));
+				$.ajax({
+					"url": "departures/"+encodeURI(departure.id),
+					"method":"PUT",
+					"data":JSON.stringify(departure),
+					"dataType": "JSON",
+					contentType: "application/json; charset=utf-8",
+					"success":function(result){
+					   // console.log(result);					  
+					},
+					"error":function(xhr,status,error){
+						console.log("error: "+status+" msg:"+error);
+					}
+				});
+			}
+	
+			// DELETE DEPARTURE
+			function deleteDeparture(id){				
+				//console.log(JSON.stringify('deleting '+id));
+				$.ajax({
+					"url": "/departures/"+encodeURI(id),
+					"method":"DELETE",
+					"data":"",
+					"dataType": "JSON",
+					contentType: "application/json; charset=utf-8",
+					"success":function(result){
+						//console.log(result);				  
+					},
+					"error":function(xhr,status,error){
+						console.log("error: "+status+" msg:"+error);
+					}
+				});
+			}
+						
+			// Activating main function here
+			init()
+									
+		</script>			
+    </body>		
+</html>
