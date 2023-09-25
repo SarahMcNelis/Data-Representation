@@ -1,6 +1,6 @@
-# Assessment: Data Representation Project
+# Data Representation Project
 
-by Sarah McNelis - G00398343
+by Sarah McNelis
 
 <br>
 
